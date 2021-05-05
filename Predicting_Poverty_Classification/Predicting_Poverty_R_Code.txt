@@ -1,0 +1,128 @@
+
+library(ISLR)
+library(class)
+library(tree)
+library(randomForest)
+library(MLmetrics)
+train_data <- read.csv("C:/Users/nghia/OneDrive/Desktop/worldbank_train_data.csv")
+test_data <- read.csv("C:/Users/nghia/OneDrive/Desktop/worldbank_test_data.csv")
+summary(train_data) #view our summary statistics
+str(train_data)
+#we can see that there are many factor variables, many of which are categorical,
+#as described in the problem. This presents a challenge to us for some processes,
+#such as using KNN. We will want to modify these variables into something useful
+#for some algorithims
+
+plot(train_data$poor)
+table(train_data$poor)
+#We can see that there is a pretty even distribution and not one variable is 
+#too skewed. 
+
+#we are going to omit country and ID for both our test data and train data
+#as they are unique and provide us little information. 
+train_data <- train_data[,-346][,-1]
+test_data <- test_data[,-346][,-1]
+#Lets check the dimensions of both dataset
+dim(train_data)
+dim(test_data)
+#we are going to create a local variable that will store the binary value,
+#poor, in 0/1s to use to test for accracy for our logloss function
+num_train_poor <- as.numeric(train_data$poor) -1
+num_test_poor <- as.numeric(test_data$poor)- 1
+
+#Lets create some dummy variables for future uses
+train_dummy_var <- model.matrix(poor ~., train_data)[,-1]
+dim(train_dummy_var)
+
+
+#Use the tree() and set poor as our interest variable and ~. will call all
+#variables in our dataset to be taken in
+#note that we are using train_data which is our original imported dataset
+tree.training_data <- tree(poor ~., data = train_data)
+summary(tree.training_data)
+plot(tree.training_data)
+text(tree.training_data, pretty = 0)
+# Fortunately the tree()  give us,what it thinks, to be
+# the most signficant variables.
+
+#we are going to use the predict function and use ONLY the "True" column
+#as that will provide us a probability of poverty
+
+tree.num <- predict(tree.training_data)
+tree.num
+LL_tree_score <-LogLoss(tree.num[,-1], num_train_poor)
+LL_tree_score
+
+#we will randomForest using the imported data, train_data, the built-in ntree =500
+rf.test_data <- randomForest(poor~., data = train_data, importance=TRUE, ntree=500)
+
+summary(rf.test_data)
+rf_test_score <- predict(rf.test_data, type = "prob")[,-1]
+# we run something similar in the tree() and use predict and take in True values only
+
+LL_rf_score <- LogLoss(rf_test_score, num_train_poor)
+LL_rf_score
+
+#We are going to creat a df that will consist only of integer values 
+#and at the same time, we will append all of our dummy variables into
+#this data frame, we will add poor back into this data to set as our dependent
+#variables for future parameters
+model_train_data <- data.frame(poor,
+    (Filter(is.numeric, train_data)), train_dummy_var)[,-2]
+dim(model_train_data)
+model_train_data
+
+lrmodel <- glm(formula = poor ~., data = model_train_data, family = binomial)
+summary(lrmodel)
+
+lrscore <- predict(lrmodel, type ="response")
+LL_lrscore <- LogLoss(lrscore,num_train_poor)
+lrscore
+
+pb_model <- glm(formula = poor ~., data = model_train_data,
+               family = binomial(link ="probit"))
+summary(pb_model)
+pb_score <- predict(pb_model)
+LL_pb_score <- LogLoss(pb_score, num_train_poor)
+
+
+
+lpm_model <- lm(poor ~., data = model_train_data)
+lpm_score <- predict(lpm_model)
+LL_lpm_score <- LogLoss(lpm_score, num_train_poor)
+LL_lpmp_score
+
+#We are doing something similar to the classifcation notebook week 9, where we are spliting
+#our train data and test data. I could not use the test_data since there were
+#some differences within its dimension.
+scaled_model_data <- data.frame(poor,
+    scale(Filter(is.numeric, train_data)), train_dummy_var)[,-2] 
+test = 1:2000
+knn_train_data <- scaled_model_data[-test,]
+knn_test_data <- scaled_model_data[test,]
+train_poor <- train_data$poor[-test]
+test_poor <- train_data$poor[test]
+knn.pred <- knn(train = knn_train_data, test = knn_test_data, cl = train_poor,
+                k = 75)
+#used K=75 because it was the square root of the number of observations
+knn.pred
+
+#I found just using the accuracy to be a better test for KNN specifically 
+table(knn.pred, test_poor)
+accuracy <- (813/(348+813))
+accuracy
+
+cat("Decision tree LogLoss Score:")
+LL_tree_score
+cat("Random Forest LogLoss Score:")
+LL_rf_score
+cat("Logit LogLoss Score:")
+LL_lrscore
+cat("Probit LogLoss score: ")
+LL_pb_score
+cat("Linear Probability Model LogLoss Score:") 
+LL_lpmp_score
+cat("KNN Accuracy:")
+accuracy
+
+
