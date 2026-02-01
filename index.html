@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>One Simple Question 😏</title>
+
+  <style>
+    body {
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+      background: #fff;
+      text-align: center;
+    }
+
+    .container {
+      position: relative;
+      width: 90vw;
+      max-width: 360px;
+      height: 220px;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 14px 26px;
+      font-size: 18px;
+      border-radius: 10px;
+      border: none;
+      background: #007aff;
+      color: white;
+    }
+
+    #yesBtn {
+      margin-right: 16px;
+    }
+
+    #noBtn {
+      position: absolute;
+      background: #ff3b30;
+    }
+
+    img {
+      display: none;
+      margin-top: 30px;
+      max-width: 80vw;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Do you agree?</h1>
+
+  <div class="container">
+    <button id="yesBtn">Yes</button>
+    <button id="noBtn">No</button>
+  </div>
+
+  <img
+    id="resultImage"
+    src="https://via.placeholder.com/300"
+    alt="You said yes!"
+  />
+
+  <script>
+    const noBtn = document.getElementById("noBtn");
+    const yesBtn = document.getElementById("yesBtn");
+    const image = document.getElementById("resultImage");
+    const container = document.querySelector(".container");
+
+    function moveNoButton() {
+      const maxX = container.clientWidth - noBtn.offsetWidth;
+      const maxY = container.clientHeight - noBtn.offsetHeight;
+
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
+
+      noBtn.style.left = `${x}px`;
+      noBtn.style.top = `${y}px`;
+    }
+
+    // Desktop
+    noBtn.addEventListener("mouseenter", moveNoButton);
+
+    // Mobile (iOS / Android)
+    noBtn.addEventListener("touchstart", (e) => {
+      e.preventDefault(); // stops the tap from registering
+      moveNoButton();
+    });
+
+    yesBtn.addEventListener("click", () => {
+      image.style.display = "block";
+    });
+  </script>
+
+</body>
+</html>
